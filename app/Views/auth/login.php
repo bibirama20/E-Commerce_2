@@ -26,7 +26,12 @@
             text-align: center;
             margin-bottom: 30px;
             background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+            
+            /* Tambahan agar lintas browser */
+            background-clip: text;
             -webkit-background-clip: text;
+
+            color: transparent;
             -webkit-text-fill-color: transparent;
         }
 

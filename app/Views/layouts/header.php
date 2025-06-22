@@ -9,46 +9,30 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
+        html, body {
+            height: 100%;
             margin: 0;
-            padding: 0;
         }
 
-        .sidebar {
-            min-height: 100vh;
-            background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
-            color: #fff;
-        }
-
-        .sidebar a {
-            color: #fff;
-            display: block;
-            padding: 10px 15px;
-            text-decoration: none;
-        }
-
-        .sidebar a:hover {
-            background:rgb(102, 98, 98);
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', sans-serif;
+            padding-top: 60px; /* space for sticky header */
         }
 
         .role-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1030;
             background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
             color: #fff;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 20px;
-        }
-
-        .role-bar .left {
-            font-weight: 500;
-        }
-
-        .role-bar .right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .role-bar .right a {
@@ -63,16 +47,53 @@
         .role-bar .right a:hover {
             background-color: rgba(250, 249, 249, 0.2);
         }
+
+        .content-wrapper {
+            flex: 1 0 auto;
+            display: flex;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 50px;
+            bottom: 0;
+            left: 0;
+            width: 230px;
+            background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+            color: #fff;
+            overflow-y: auto;
+        }
+
+        .sidebar a {
+            color: #fff;
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+        }
+
+        .sidebar a:hover {
+            background: rgb(102, 98, 98);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 15px;
+            width: 100%;
+        }
+
+        footer {
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Role Info Bar / Header -->
-    <div class="role-bar">
-        <div class="left">
-            <strong>AHS.CO</strong>
-        </div>
-        <div class="right">
-            <span><?= esc(session()->get('username')) ?> (<?= esc(session()->get('role')) ?>)</span>
-        </div>
+<!-- Header -->
+<div class="role-bar">
+    <div class="left">
+        <strong>AHS.CO</strong>
     </div>
+    <div class="right">
+        <span>🙋🏻‍♂️<?= esc(session()->get('username')) ?> (<?= esc(session()->get('role')) ?>)</span>
+    </div>
+</div>

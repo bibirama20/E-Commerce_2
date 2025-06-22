@@ -50,11 +50,8 @@ $routes->get('/admin/kelola-produk/edit/(:num)', 'ProductController::edit/$1', [
 $routes->post('/admin/kelola-produk/update/(:num)', 'ProductController::update/$1', ['filter' => 'role:admin']);
 $routes->get('/admin/kelola-produk/delete/(:num)', 'ProductController::delete/$1', ['filter' => 'role:admin']);
 
+//invoice
 $routes->get('/admin/invoice/(:num)', 'OrderController::invoice/$1', ['filter' => 'role:admin']);
 $routes->get('/user/invoice/(:num)', 'OrderController::invoice/$1', ['filter' => 'role:user']);
 
 $routes->get('/admin/produk/pdf', 'ProductController::pdf', ['filter' => 'role:admin']);
-
-
-
-

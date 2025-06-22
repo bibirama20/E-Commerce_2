@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 <?= $this->section('content') ?>
 
-<h2>Checkout</h2>
+<h2>💵 Checkout</h2>
 
 <form method="post" action="/<?= $role ?>/checkout/simpan">
     <div class="mb-3">

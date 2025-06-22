@@ -1,4 +1,4 @@
-<?php
+git push -u origin main<?php
 
 use CodeIgniter\Test\CIUnitTestCase;
 use CodeIgniter\Test\DatabaseTestTrait;

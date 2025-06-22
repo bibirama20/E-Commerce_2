@@ -26,7 +26,7 @@ class KeranjangController extends BaseController
                 'name'   => $produk['name'],
                 'price'  => $produk['price'],
                 'qty'    => 1,
-                'diskon' => $produk['diskon'] ?? 0 // ✅ sudah benar pakai 'diskon'
+                'diskon' => $produk['diskon'] ?? 0 
             ];
         }
 
@@ -45,7 +45,7 @@ class KeranjangController extends BaseController
             $produk = $productModel->find($item['id']);
 
             $price = $produk['price'];
-            $diskon = $produk['diskon'] ?? 0; // ✅ pakai diskon
+            $diskon = $produk['diskon'] ?? 0;
             $priceAfterDiskon = $price - ($price * $diskon / 100);
             $subtotal = $priceAfterDiskon * $item['qty'];
 
@@ -53,7 +53,7 @@ class KeranjangController extends BaseController
                 'id'       => $item['id'],
                 'name'     => $item['name'],
                 'price'    => $price,
-                'diskon'   => $diskon, // ✅ tampilkan sebagai diskon
+                'diskon'   => $diskon, 
                 'quantity' => $item['qty'],
                 'subtotal' => $subtotal
             ];

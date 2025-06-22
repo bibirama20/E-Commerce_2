@@ -9,11 +9,13 @@
 
 <!-- Carousel Produk Terbaru -->
 <?php if (!empty($produk_terbaru)): ?>
+    <?php $produk_terbaru_terbatas = array_slice($produk_terbaru, 0, 5); ?>
+
     <div id="carouselExampleIndicators" class="carousel slide mb-4" data-bs-ride="carousel">
         
         <!-- Bulatan indikator -->
         <div class="carousel-indicators">
-            <?php foreach ($produk_terbaru as $i => $p): ?>
+            <?php foreach ($produk_terbaru_terbatas as $i => $p): ?>
                 <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="<?= $i ?>"
                     class="<?= $i == 0 ? 'active' : '' ?>" aria-current="<?= $i == 0 ? 'true' : 'false' ?>"
                     aria-label="Slide <?= $i + 1 ?>"></button>
@@ -22,12 +24,12 @@
 
         <!-- Isi carousel -->
         <div class="carousel-inner rounded shadow">
-            <?php foreach ($produk_terbaru as $i => $p): ?>
+            <?php foreach ($produk_terbaru_terbatas as $i => $p): ?>
                 <div class="carousel-item <?= $i == 0 ? 'active' : '' ?>">
                     <img src="<?= base_url('uploads/' . $p['image']) ?>" 
                         class="d-block w-100" style="height: 550px; object-fit: cover;" 
                         alt="Promo <?= $i + 1 ?>" 
-                        onerror="this.onerror=null; this.src='https : //via.placeholder.com/1200x300?text=Gambar+Promo+Tidak+Ada';">
+                        onerror="this.onerror=null; this.src='https://via.placeholder.com/1200x300?text=Gambar+Promo+Tidak+Ada';">
                 </div>
             <?php endforeach; ?>
         </div>

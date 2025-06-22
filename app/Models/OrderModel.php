@@ -9,5 +9,8 @@ class OrderModel extends Model
     protected $table = 'orders'; // nama tabel di database
     protected $primaryKey = 'id';
 
-    protected $allowedFields = ['user_id', 'total', 'city', 'shipping_cost'];
+    protected $allowedFields = [
+    'user_id', 'total', 'city', 'shipping_cost',
+    'nama', 'alamat', 'no_hp' // <--- tambahkan ini
+];
 }

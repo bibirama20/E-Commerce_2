@@ -21,18 +21,13 @@ class OrderController extends BaseController
     public function produk()
     {
         $produk = $this->productModel->findAll();
-
         $data = [
             'produk' => $produk,
             'username' => session()->get('username'),
             'role' => session()->get('role')
         ];
 
-        if ($data['role'] === 'admin') {
-            return view('admin/produk/list', $data);
-        } else {
-            return view('user/produk/list', $data);
-        }
+        return view($data['role'] === 'admin' ? 'admin/produk/list' : 'user/produk/list', $data);
     }
 
     public function tambah($id)
@@ -59,10 +54,7 @@ class OrderController extends BaseController
 
         foreach ($cart as $id => $qty) {
             $p = $this->productModel->find($id);
-
-            if (!$p || !isset($p['price'])) {
-                continue; // lewati jika produk tidak ditemukan atau tanpa harga
-            }
+            if (!$p || !isset($p['price'])) continue;
 
             $p['quantity'] = $qty;
             $p['subtotal'] = $qty * $p['price'];
@@ -76,18 +68,31 @@ class OrderController extends BaseController
             'role' => session()->get('role')
         ];
 
-        if ($data['role'] === 'admin') {
-            return view('admin/keranjang/index', $data);
-        } else {
-            return view('user/keranjang/index', $data);
-        }
+        return view($data['role'] === 'admin' ? 'admin/keranjang/index' : 'user/keranjang/index', $data);
     }
 
     public function checkout()
     {
+        $cart = session()->get('cart') ?? [];
+        $items = [];
+        $total = 0;
+
+        foreach ($cart as $id => $qty) {
+            $product = $this->productModel->find($id);
+            if (!$product || !isset($product['price'])) continue;
+
+            $product['quantity'] = $qty;
+            $product['subtotal'] = $qty * $product['price'];
+            $total += $product['subtotal'];
+            $items[] = $product;
+        }
+
         $data = [
+            'items' => $items,
+            'total' => $total,
             'role' => session()->get('role')
         ];
+
         return view(session()->get('role') . '/checkout', $data);
     }
 
@@ -101,30 +106,22 @@ class OrderController extends BaseController
         $nama = $this->request->getPost('nama');
         $alamat = $this->request->getPost('alamat');
         $no_hp = $this->request->getPost('no_hp');
-        $ekspedisi = $this->request->getPost('ekspedisi');
-
-        $ongkir = 15000; // dummy ongkir
-
-        $total = 0;
-        foreach ($cart as $id => $qty) {
-            $p = $this->productModel->find($id);
-            if (!$p || !isset($p['price'])) continue;
-            $total += $p['price'] * $qty;
-        }
-
-        $grandTotal = $total + $ongkir;
+        $kelurahan = $this->request->getPost('kelurahan'); // subdistrict ID
+        $layanan = $this->request->getPost('layanan');     // nama layanan pengiriman
+        $ongkir = (int) $this->request->getPost('ongkir');
+        $totalHarga = (int) $this->request->getPost('total_harga');
 
         $orderId = $this->orderModel->insert([
-            'user_id' => session()->get('username'),
-            'total' => $grandTotal,
-            'city' => $ekspedisi,
+            'user_id'       => session()->get('username'),
+            'total'         => $totalHarga,
+            'city'          => $layanan, // kolom 'city' bisa diubah jadi 'layanan' jika kamu ingin lebih deskriptif
             'shipping_cost' => $ongkir,
-            'nama' => $nama,
-            'alamat' => $alamat,
-            'no_hp' => $no_hp
+            'nama'          => $nama,
+            'alamat'        => $alamat,
+            'no_hp'         => $no_hp
         ]);
 
-                foreach ($cart as $id => $qty) {
+        foreach ($cart as $id => $qty) {
             $p = $this->productModel->find($id);
             if (!$p || !isset($p['price'])) continue;
 
@@ -137,14 +134,14 @@ class OrderController extends BaseController
                 'order_id'   => $orderId,
                 'product_id' => $id,
                 'quantity'   => $qty,
-                'price'      => $hargaDiskon, // tambahkan field ini di model & tabel
+                'price'      => $hargaDiskon,
                 'subtotal'   => $subtotal
             ]);
         }
 
-        $role = session()->get('role');
-        return redirect()->to("/$role/invoice/" . $orderId);
+        session()->remove('cart'); // Kosongkan keranjang setelah checkout
 
+        return redirect()->to('/' . session()->get('role') . '/invoice/' . $orderId);
     }
 
     public function invoice($id)
@@ -166,27 +163,94 @@ class OrderController extends BaseController
         $dompdf->stream("invoice_{$id}.pdf", ['Attachment' => false]);
     }
 
-public function updateKeranjang()
-{
-    $cart = session()->get('cart') ?? [];
-    $quantities = $this->request->getPost('quantities');
+    public function updateKeranjang()
+    {
+        $cart = session()->get('cart') ?? [];
+        $quantities = $this->request->getPost('quantities');
 
-    if (!$quantities) {
-        return redirect()->back()->with('error', 'Tidak ada data jumlah yang dikirim.');
+        if (!$quantities) {
+            return redirect()->back()->with('error', 'Tidak ada data jumlah yang dikirim.');
+        }
+
+        foreach ($quantities as $id => $qty) {
+            $qty = (int) $qty;
+            if ($qty < 1) {
+                unset($cart[$id]);
+            } else {
+                $cart[$id] = $qty;
+            }
+        }
+
+        session()->set('cart', $cart);
+        return redirect()->back()->with('success', 'Keranjang berhasil diperbarui.');
     }
 
-    foreach ($quantities as $id => $qty) {
-        $qty = (int) $qty;
+public function getLocation()
+{
+    $search = $this->request->getGet('search');
+    $apiKey = getenv('RAJAONGKIR_API_KEY');
 
-        if ($qty < 1) {
-            unset($cart[$id]); // Hapus item kalau jumlah < 1
-        } else {
-            $cart[$id] = $qty; // Update jumlah
+    $client = \Config\Services::curlrequest();
+    $response = $client->request('GET', 'https://pro.rajaongkir.com/api/subdistrict', [
+        'headers' => ['key' => $apiKey],
+        'query' => ['q' => $search]
+    ]);
+
+    $data = json_decode($response->getBody(), true);
+
+    $results = [];
+    if (!empty($data['rajaongkir']['results'])) {
+        foreach ($data['rajaongkir']['results'] as $item) {
+            if (stripos($item['subdistrict_name'], $search) !== false) {
+                $results[] = $item;
+            }
         }
     }
 
-    session()->set('cart', $cart); // Simpan kembali
-    return redirect()->back()->with('success', 'Keranjang berhasil diperbarui.');
+    return $this->response->setJSON($results);
+}
+
+
+public function getCost()
+{
+    $destination = $this->request->getGet('destination');
+    $apiKey = getenv('RAJAONGKIR_API_KEY');
+    $origin = getenv('RAJAONGKIR_ORIGIN');
+
+    $client = \Config\Services::curlrequest();
+    $response = $client->request('POST', 'https://pro.rajaongkir.com/api/cost', [
+        'headers' => [
+            'key' => $apiKey,
+            'content-type' => 'application/x-www-form-urlencoded',
+        ],
+        'form_params' => [
+            'origin' => $origin,
+            'originType' => 'city',
+            'destination' => $destination,
+            'destinationType' => 'subdistrict',
+            'weight' => 1000,
+            'courier' => 'jne:pos:tiki'
+        ]
+    ]);
+
+    $data = json_decode($response->getBody(), true);
+
+    $results = [];
+
+    foreach ($data['rajaongkir']['results'] as $courier) {
+        foreach ($courier['costs'] as $cost) {
+            foreach ($cost['cost'] as $detail) {
+                $results[] = [
+                    'service' => $cost['service'],
+                    'description' => $courier['name'],
+                    'cost' => $detail['value'],
+                    'etd' => $detail['etd']
+                ];
+            }
+        }
+    }
+
+    return $this->response->setJSON($results);
 }
 
 }

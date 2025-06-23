@@ -55,3 +55,8 @@ $routes->get('/admin/invoice/(:num)', 'OrderController::invoice/$1', ['filter' =
 $routes->get('/user/invoice/(:num)', 'OrderController::invoice/$1', ['filter' => 'role:user']);
 
 $routes->get('/admin/produk/pdf', 'ProductController::pdf', ['filter' => 'role:admin']);
+
+// app/Config/Routes.php
+$routes->get('get-location', 'OrderController::getLocation');
+$routes->get('get-cost', 'OrderController::getCost');
+

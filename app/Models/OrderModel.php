@@ -6,11 +6,13 @@ use CodeIgniter\Model;
 
 class OrderModel extends Model
 {
-    protected $table = 'orders'; // nama tabel di database
+    protected $table = 'orders';
     protected $primaryKey = 'id';
-
     protected $allowedFields = [
-    'user_id', 'total', 'city', 'shipping_cost',
-    'nama', 'alamat', 'no_hp' // <--- tambahkan ini
-];
+        'user_id', 'total', 'city', 'shipping_cost',
+        'nama', 'alamat', 'no_hp', 'created_at'
+    ];
+    protected $useTimestamps = true;
+    protected $createdField  = 'created_at';
+    protected $updatedField  = '';
 }

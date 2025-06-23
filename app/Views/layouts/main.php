@@ -7,3 +7,6 @@
     </div>
 </div>
 <?= $this->include('layouts/footer') ?>
+
+<!-- Tambahkan ini agar script checkout dijalankan -->
+<?= $this->renderSection('script') ?>

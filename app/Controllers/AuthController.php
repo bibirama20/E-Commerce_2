@@ -40,7 +40,7 @@ class AuthController extends BaseController
     }
 
 
-public function registerDummy()
+/*public function registerDummy()
 {
     $userModel = new \App\Models\UserModel();
 
@@ -59,7 +59,7 @@ public function registerDummy()
     ]);
 
     return 'Dummy user berhasil ditambahkan!';
-}
+}*/
 
 }
 

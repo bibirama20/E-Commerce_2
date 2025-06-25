@@ -4,8 +4,9 @@
         <tr>
             <th>Nama</th>
             <th>Harga</th>
+            <th>Diskon (%)</th>
+            <th>Harga Setelah Diskon</th>
             <th>Stok</th>
-            <th>Gambar</th> <!-- Tambahan kolom gambar -->
         </tr>
     </thead>
     <tbody>
@@ -13,10 +14,15 @@
         <tr>
             <td><?= $p['name'] ?></td>
             <td>Rp<?= number_format($p['price']) ?></td>
-            <td><?= $p['stock'] ?></td>
+            <td><?= isset($p['diskon']) ? $p['diskon'] . '%' : '0%' ?></td>
             <td>
-                <img src="<?= base_url('uploads/' . $p['image']) ?>" width="80">
+                Rp<?php 
+                    $diskon = isset($p['diskon']) ? $p['diskon'] : 0;
+                    $hargaSetelahDiskon = $p['price'] - ($p['price'] * $diskon / 100);
+                    echo number_format($hargaSetelahDiskon);
+                ?>
             </td>
+            <td><?= $p['stock'] ?></td>
         </tr>
         <?php endforeach ?>
     </tbody>

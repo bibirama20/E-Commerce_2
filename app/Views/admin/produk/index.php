@@ -4,10 +4,6 @@
 <h1>Daftar Produk</h1>
 <a href="/admin/produk/create" class="btn btn-primary mb-3">+ Tambah Produk</a>
 
-<?php if (session()->getFlashdata('success')): ?>
-  <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
-<?php endif; ?>
-
 <table class="table table-bordered">
   <thead>
     <tr>
@@ -34,4 +30,4 @@
   </tbody>
 </table>
 
-<?= $this->endSection()?>
+<?= $this->endSection() ?>

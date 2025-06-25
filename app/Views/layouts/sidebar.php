@@ -32,7 +32,7 @@
         <?php endif; ?>
 
         <li class="nav-item mt-3">
-            <a class="nav-link text-danger" href="<?= base_url('/logout') ?>">🔓 Logout</a>
-        </li>
+            <a class="nav-link text-white" href="<?= base_url('/logout') ?>">🔓 Logout</a>
+        </li>
     </ul>
 </div>

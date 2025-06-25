@@ -27,7 +27,7 @@
             left: 0;
             width: 100%;
             z-index: 1030;
-            background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+            background: linear-gradient(135deg,rgb(45, 191, 207) 0%,rgb(62, 196, 118)  100%);
             color: #fff;
             display: flex;
             justify-content: space-between;
@@ -59,7 +59,7 @@
             bottom: 0;
             left: 0;
             width: 230px;
-            background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+            background: linear-gradient(135deg, rgb(45, 191, 207) 0%, rgb(62, 196, 118) 100%);
             color: #fff;
             overflow-y: auto;
         }
@@ -91,9 +91,9 @@
 <!-- Header -->
 <div class="role-bar">
     <div class="left">
-        <strong>AHS.CO</strong>
+        <strong>ZETANI</strong>
     </div>
     <div class="right">
-        <span>🙋🏻‍♂️<?= esc(session()->get('username')) ?> (<?= esc(session()->get('role')) ?>)</span>
-    </div>
+        <span>🙋🏻‍♂<?= esc(session()->get('username')) ?> (<?= esc(session()->get('role')) ?>)</span>
+    </div>
 </div>

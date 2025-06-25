@@ -3,10 +3,6 @@
 
 <h2>🛒 Keranjang Belanja</h2>
 
-<?php if (session()->getFlashdata('success')): ?>
-    <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
-<?php endif; ?>
-
 <?php if (empty($items)): ?>
     <div class="alert alert-info">Keranjang Anda kosong.</div>
 <?php else: ?>
@@ -48,17 +44,17 @@
     </table>
 
     <?php
-    $totalSetelahDiskon = 0;
-    foreach ($items as $item) {
-        $diskon = $item['diskon'] ?? 0;
-        $hargaAwal = $item['price'];
-        $hargaSetelahDiskon = $hargaAwal - ($hargaAwal * $diskon / 100);
-        $subtotal = $hargaSetelahDiskon * $item['quantity'];
-        $totalSetelahDiskon += $subtotal;
-    }
-?>
-<p><strong>Total: Rp<?= number_format($totalSetelahDiskon, 0, ',', '.') ?></strong></p>
+        $totalSetelahDiskon = 0;
+        foreach ($items as $item) {
+            $diskon = $item['diskon'] ?? 0;
+            $hargaAwal = $item['price'];
+            $hargaSetelahDiskon = $hargaAwal - ($hargaAwal * $diskon / 100);
+            $subtotal = $hargaSetelahDiskon * $item['quantity'];
+            $totalSetelahDiskon += $subtotal;
+        }
+    ?>
 
+    <p><strong>Total: Rp<?= number_format($totalSetelahDiskon, 0, ',', '.') ?></strong></p>
 
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-warning">Update Jumlah</button>

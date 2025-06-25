@@ -55,3 +55,20 @@ $routes->get('/admin/invoice/(:num)', 'OrderController::invoice/$1', ['filter' =
 $routes->get('/user/invoice/(:num)', 'OrderController::invoice/$1', ['filter' => 'role:user']);
 
 $routes->get('/admin/produk/pdf', 'ProductController::pdf', ['filter' => 'role:admin']);
+
+
+
+$routes->get('api/kota', 'RajaOngkirController::getKota');
+$routes->post('api/ongkir', 'RajaOngkirController::cekOngkir');
+
+
+$routes->get('user/batalCheckout', 'OrderController::batalCheckout', ['filter' => 'role:user']);
+$routes->get('admin/batalCheckout/', 'OrderController::batalCheckout', ['filter' => 'role:admin']);
+
+$routes->get('get-location', 'OrderController::getLocation', ['filter' => 'auth']);
+$routes->get('get-cost', 'OrderController::getCost', ['filter' => 'auth']);
+
+$routes->get('/admin/dashboard', 'DashboardController::admin', ['filter' => 'auth:admin']);
+$routes->get('/user/dashboard', 'DashboardController::user', ['filter' => 'auth:user']);
+
+

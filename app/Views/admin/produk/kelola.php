@@ -5,6 +5,10 @@
 <a href="/admin/kelola-produk/tambah" class="btn btn-success mb-3">+ Tambah Produk</a>
 <a href="/admin/produk/pdf" class="btn btn-danger mb-3 float-end">🖨 Cetak PDF</a>
 
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
+<?php endif; ?>
+
 <table class="table table-bordered">
     <thead>
         <tr>

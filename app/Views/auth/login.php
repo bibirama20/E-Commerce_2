@@ -88,7 +88,7 @@
 <body>
 
 <div class="login-box">
-    <h2>AHS.CO</h2>
+    <h2>ZETANI</h2>
 
     <?php if (session()->getFlashdata('error')): ?>
         <div class="error"><?= session()->getFlashdata('error') ?></div>

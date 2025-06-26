@@ -4,49 +4,75 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 
+
 class RajaOngkirController extends Controller
 {
-    private $apiKey = 'M3Oana6U78d8d8d57a31a1c3E6LlB6tO'; // ganti dengan API key rajaongkir kamu
+    private $client;
+    private $apiKey;
 
-   public function getKota()
-{
-    $client = \Config\Services::curlrequest();
-    $response = $client->get('https://api.rajaongkir.com/starter/city', [
-        'headers' => ['key' => 'M3Oana6U78d8d8d57a31a1c3E6LlB6tO']
-    ]);
-
-    $json = json_decode($response->getBody(), true);
-    return $this->response->setJSON(['results' => $json['rajaongkir']['results']]);
-}
-
-
-    public function cekOngkir()
+    public function __construct()
     {
-        $origin = 78; // Semarang
-        $destination = $this->request->getPost('destination');
-        $weight = $this->request->getPost('weight');
-        $courier = $this->request->getPost('courier');
+        helper('number');
+        helper('form');
+        $this->client = new \GuzzleHttp\Client();
+        $this->apiKey = env('COST_KEY');
+    }
 
-        $client = \Config\Services::curlrequest();
-        $response = $client->post('https://api.rajaongkir.com/starter/cost', [
-            'headers' => ['key' => $this->apiKey],
-            'form_params' => [
-                'origin' => $origin,
-                'destination' => $destination,
-                'weight' => $weight,
-                'courier' => $courier
+    public function getLocation()
+    {
+            //keyword pencarian yang dikirimkan dari halaman checkout
+        $search = $this->request->getGet('search');
+
+        $response = $this->client->request(
+            'GET', 
+            'https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search='.$search.'&limit=50', [
+                'headers' => [
+                    'accept' => 'application/json',
+                    'key' => $this->apiKey,
+                ],
             ]
-        ]);
+        );
 
-        $data = json_decode($response->getBody(), true);
-        $ongkir = $data['rajaongkir']['results'][0]['costs'][0]['cost'][0]['value'];
-        $layanan = $data['rajaongkir']['results'][0]['costs'][0]['service'];
-        $kodeKurir = strtoupper($data['rajaongkir']['results'][0]['code']);
+        $body = json_decode($response->getBody(), true); 
+        return $this->response->setJSON($body['data']);
+    }
 
-        return $this->response->setJSON([
-            'success' => true,
-            'ongkir' => $ongkir,
-            'service' => $kodeKurir . ' - ' . $layanan
-        ]);
+    public function getCost()
+    { 
+            //ID lokasi yang dikirimkan dari halaman checkout
+        $destination = $this->request->getGet('destination');
+
+            //parameter daerah asal pengiriman, berat produk, dan kurir dibuat statis
+        //valuenya => 64999 : PEDURUNGAN TENGAH , 1000 gram, dan JNE
+        $response = $this->client->request(
+            'POST', 
+            'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+                'multipart' => [
+                    [
+                        'name' => 'origin',
+                        'contents' => '64999'
+                    ],
+                    [
+                        'name' => 'destination',
+                        'contents' => $destination
+                    ],
+                    [
+                        'name' => 'weight',
+                        'contents' => '1000'
+                    ],
+                    [
+                        'name' => 'courier',
+                        'contents' => 'jne'
+                    ]
+                ],
+                'headers' => [
+                    'accept' => 'application/json',
+                    'key' => $this->apiKey,
+                ],
+            ]
+        );
+
+        $body = json_decode($response->getBody(), true); 
+        return $this->response->setJSON($body['data']);
     }
 }

@@ -39,28 +39,27 @@ class AuthController extends BaseController
         return redirect()->to('/');
     }
 
+    // Opsional: Seeder user dummy (aktifkan jika dibutuhkan)
+    /*
+    public function registerDummy()
+    {
+        $userModel = new \App\Models\UserModel();
 
-public function registerDummy()
-{
-    $userModel = new \App\Models\UserModel();
+        // Admin
+        $userModel->insert([
+            'username' => 'admin',
+            'password' => password_hash('2345678', PASSWORD_DEFAULT),
+            'role'     => 'admin'
+        ]);
 
-    // Tambah user admin
-    $userModel->insert([
-        'username' => 'admin',
-        'password' => password_hash('2345678', PASSWORD_DEFAULT),
-        'role'     => 'admin'
-    ]);
+        // User
+        $userModel->insert([
+            'username' => 'user',
+            'password' => password_hash('2345678', PASSWORD_DEFAULT),
+            'role'     => 'user'
+        ]);
 
-    // Tambah user biasa
-    $userModel->insert([
-        'username' => 'user',
-        'password' => password_hash('2345678', PASSWORD_DEFAULT),
-        'role'     => 'user'
-    ]);
-
-    return 'Dummy user berhasil ditambahkan!';
+        return 'Dummy user berhasil ditambahkan!';
+    }
+    */
 }
-
-}
-
-

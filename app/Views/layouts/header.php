@@ -32,7 +32,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 10px 20px;
         }
 
         .role-bar .right a {
@@ -55,7 +55,7 @@
 
         .sidebar {
             position: fixed;
-            top: 50px;
+            top: 65px;
             bottom: 0;
             left: 0;
             width: 230px;
@@ -84,6 +84,19 @@
         footer {
             flex-shrink: 0;
         }
+
+        /* Tambahan: Gradasi teks seperti di login */
+        .gradient-text {
+            background: white;
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .role-bar .left h5 {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -91,9 +104,12 @@
 <!-- Header -->
 <div class="role-bar">
     <div class="left">
-        <strong>ZETANI</strong>
+        <strong class="gradient-text">ZETANI</strong><br>
+        <h7 class="gradient-text">Solusi Petani Masa Kini</h7>
     </div>
     <div class="right">
         <span>🙋🏻‍♂<?= esc(session()->get('username')) ?> (<?= esc(session()->get('role')) ?>)</span>
-    </div>
+    </div>
 </div>
+</body>
+</html>

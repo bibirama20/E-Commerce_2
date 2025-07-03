@@ -22,14 +22,11 @@
                 <div class="col-12">
                     <label for="kelurahan" class="form-label">Kelurahan</label>
                     <select class="form-control" name="kelurahan" id="kelurahan" required></select>
-                    <strong>select kelurahan</strong>
                 </div>
                 <div class="col-12">
                     <label for="layanan" class="form-label">Layanan</label>
                     <select class="form-control" name="layanan" id="layanan" required></select>
-                    <strong>select layanan</strong>
                 </div>
-
 
                 <!-- HIDDEN -->
                 <input type="hidden" id="ongkir" name="shipping_cost">
@@ -61,7 +58,14 @@
                         ?>
                         <tr>
                             <td><?= esc($item['name']) ?></td>
-                            <td>Rp<?= number_format($hargaDiskon) ?></td>
+                            <td>
+                                <?php if ($diskon > 0): ?>
+                                    <small><s>Rp<?= number_format($hargaAwal) ?></s></small><br>
+                                    Rp<?= number_format($hargaDiskon) ?>
+                                <?php else: ?>
+                                    Rp<?= number_format($hargaAwal) ?>
+                                <?php endif ?>
+                            </td>
                             <td><?= $item['quantity'] ?></td>
                             <td>Rp<?= number_format($subtotal) ?></td>
                         </tr>
@@ -73,20 +77,23 @@
                 </tbody>
             </table>
 
-            <!-- Pindahan: Total, Estimasi, Tombol -->
             <div class="mb-3">
-                <label><strong>Total Harga</strong></label>
+                <label><strong>Total Harga "Harga Produk + Ongkir"</strong></label>
                 <p id="total"><em>Silakan pilih layanan untuk menghitung total</em></p>
             </div>
             <div class="mb-3">
                 <label><strong>Estimasi Pengiriman</strong></label>
                 <p id="estimasi"><em>Belum dipilih</em></p>
             </div>
+
             <div class="text-end d-flex justify-content-between mt-4">
-                <a href="<?= base_url(session()->get('role') . '/batalCheckout') ?>" class="btn btn-danger">
+                <a href="<?= base_url(session()->get('role') . '/produk') ?>" class="btn btn-danger">
                     Batalkan Checkout
                 </a>
-                <button type="submit" class="btn btn-success">Lanjutkan Checkout</button>
+               <button type="submit" class="btn btn-success">
+                    Lanjut Checkout
+                </button>
+
             </div>
             </form>
         </div>
@@ -105,13 +112,12 @@ const BASE_URL = '<?= base_url() ?>';
 let ongkir = 0;
 let totalProduk = <?= $totalProduk ?? 0 ?>;
 
-
-
 $(document).ready(function() {
     var ongkir = 0;
-    var total = 0; 
+    var total = 0;
 
     hitungTotal();
+
     $('#kelurahan').select2({
         placeholder: 'Ketik nama kelurahan...',
         ajax: {
@@ -126,10 +132,10 @@ $(document).ready(function() {
             processResults: function (data) {
                 return {
                     results: data.map(function(item) {
-                    return {
-                        id: item.id,
-                        text: item.subdistrict_name + ", " + item.district_name + ", " + item.city_name + ", " + item.province_name + ", " + item.zip_code
-                    };
+                        return {
+                            id: item.id,
+                            text: item.subdistrict_name + ", " + item.district_name + ", " + item.city_name + ", " + item.province_name + ", " + item.zip_code
+                        };
                     })
                 };
             },
@@ -142,39 +148,46 @@ $(document).ready(function() {
         },
         minimumInputLength: 3
     });
+
     $("#kelurahan").on('change', function() {
-        var id_kelurahan = $(this).val(); 
+        var id_kelurahan = $(this).val();
         $("#layanan").empty();
         ongkir = 0;
 
         $.ajax({
             url: "<?= site_url('get-cost') ?>",
             type: 'GET',
-            data: { 
-                'destination': id_kelurahan, 
+            data: {
+                'destination': id_kelurahan,
             },
             dataType: 'json',
-            success: function(data) { 
+            success: function(data) {
                 data.forEach(function(item) {
-                    var text = item["description"] + " (" + item["service"] + ") : estimasi " + item["etd"] + "";
+                    var label = item["description"] + " (" + item["service"] + ") - Estimasi " + item["etd"] + " Hari - Rp" + parseInt(item["cost"]).toLocaleString('id-ID');
                     $("#layanan").append($('<option>', {
-                        value: item["cost"],
-                        text: text 
+                        value: JSON.stringify(item),
+                        text: label
                     }));
                 });
-                hitungTotal(); 
+                hitungTotal();
             },
         });
     });
-    $("#layanan").on('change', function() {
-        ongkir = parseInt($(this).val());
-        hitungTotal();
-    });  
-    function hitungTotal() {
-        total = ongkir + <?= $total ?>;
 
-        $("#ongkir").val(ongkir);
-        $("#total").html("IDR " + total.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'));
+    $("#layanan").on('change', function() {
+        let selected = JSON.parse($(this).val());
+        ongkir = parseInt(selected.cost);
+        $("#ongkir").val(selected.cost);
+        $("#service").val(selected.service);
+        $("#etd").val(selected.etd);
+        $("#estimasi").text(selected.etd + " Hari");
+        hitungTotal();
+    });
+
+    function hitungTotal() {
+        total = ongkir + totalProduk;
+
+        $("#total").html("Rp " + total.toLocaleString('id-ID'));
         $("#total_harga").val(total);
     }
 });

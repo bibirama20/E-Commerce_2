@@ -4,7 +4,7 @@
 <!-- Banner Promo -->
 <div class="p-4 mb-4 text-white rounded" style="background: linear-gradient(135deg, rgb(45, 191, 207) 0%, rgb(62, 196, 118) 100%);">
     <h2 class="fw-bold">🌿 Promo Obat Pertanian Terbaik!</h2>
-    <p class="mb-0">Diskon hingga <strong>50%</strong> untuk pupuk, pestisida, dan nutrisi tanaman. Cocok untuk petani cerdas!</p>
+    <p class="mb-0">Diskon hingga <strong>50%</strong> untuk pestisida, dan nutrisi tanaman. Cocok untuk petani masa kini!</p>
 </div>
 
 <!-- Carousel Produk Terbaru -->

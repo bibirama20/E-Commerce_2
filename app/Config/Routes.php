@@ -64,3 +64,6 @@ $routes->get('/admin/kelola-produk/delete/(:num)', 'ProductController::delete/$1
 $routes->get('/admin/produk/pdf', 'ProductController::pdf', ['filter' => 'role:admin']);
 
 $routes->get('tes-api', 'OrderController::tesApiRajaongkir');
+
+$routes->post('wa/send', 'WaController::send');
+

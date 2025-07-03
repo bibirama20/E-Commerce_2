@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background:rgb(144, 145, 147);
+            background:rgb(24, 123, 82);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,7 +17,7 @@
         .login-box {
             background: rgb(251, 252, 252);
             border-radius: 10px;
-            box-shadow: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+            box-shadow: linear-gradient(135deg,rgb(45, 191, 207) 0%,rgb(62, 196, 118)  100%);
             width: 350px;
             padding: 40px 30px;
         }
@@ -25,7 +25,21 @@
         .login-box h2 {
             text-align: center;
             margin-bottom: 30px;
-            background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+            background: linear-gradient(135deg,rgb(45, 191, 207) 0%,rgb(62, 196, 118)  100%);
+            
+            /* Tambahan agar lintas browser */
+            background-clip: text;
+            -webkit-background-clip: text;
+
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+
+            .login-box h5 {
+            text-align: center;
+            margin-top: -30px; 
+            margin-bottom: 10px;
+            background: linear-gradient(135deg,rgb(62, 196, 118) 0%, rgb(45, 191, 207)  100%);
             
             /* Tambahan agar lintas browser */
             background-clip: text;
@@ -47,7 +61,7 @@
         }
 
         .login-box input:focus {
-            border-color: #52248a;
+            border-color: rgb(62, 196, 118);
         }
 
         .login-box button {
@@ -56,7 +70,7 @@
             margin-top: 15px;
             border: none;
             border-radius: 10px;
-            background: linear-gradient(135deg, rgb(86, 117, 241) 0%, #52248a 100%);
+           background: linear-gradient(135deg,rgb(45, 191, 207) 0%,rgb(62, 196, 118)  100%);
             color: white;
             font-weight: bold;
             cursor: pointer;
@@ -88,7 +102,8 @@
 <body>
 
 <div class="login-box">
-    <h2>ZETANI</h2>
+    <h2>ZETANI </h2>
+    <h5> Solusi Petani Masa Kini</h5>
 
     <?php if (session()->getFlashdata('error')): ?>
         <div class="error"><?= session()->getFlashdata('error') ?></div>

@@ -169,7 +169,7 @@ class OrderController extends BaseController
         ]);
     }
 
-   public function checkoutSimpan()
+  public function checkoutSimpan()
 {
     $cart = session()->get('cart') ?? [];
     if (empty($cart)) {
@@ -205,19 +205,53 @@ class OrderController extends BaseController
         $harga = $p['price'] - ($p['price'] * $diskon / 100);
         $subtotal = $qty * $harga;
 
-            $this->orderItemModel->insert([
-                'order_id'   => $orderId,
-                'product_id' => $id,
-                'quantity'   => $qty,
-                'price'      => $harga,
-                'subtotal'   => $subtotal
-            ]);
-        }
-
-        session()->remove('cart');
-
-        return redirect()->to('/' . session()->get('role') . '/invoice/' . $orderId);
+        $this->orderItemModel->insert([
+            'order_id'   => $orderId,
+            'product_id' => $id,
+            'quantity'   => $qty,
+            'price'      => $harga,
+            'subtotal'   => $subtotal
+        ]);
     }
+
+    // Kirim WA setelah simpan
+    $items = [];
+    foreach ($cart as $id => $qty) {
+        $p = $this->productModel->find($id);
+        if (!$p) continue;
+
+        $items[] = [
+            'name'     => $p['name'],
+            'price'    => $p['price'],
+            'quantity' => $qty
+        ];
+    }
+
+    try {
+        $client = \Config\Services::curlrequest();
+        $client->request('POST', base_url('wa/send'), [
+            'form_params' => [
+                'no_hp'   => $no_hp,
+                'nama'    => $nama,
+                'alamat'  => $alamat,
+                'layanan' => json_encode([
+                    'description' => $layanan,
+                    'service'     => $layanan,
+                    'etd'         => $etd
+                ]),
+                'items'   => json_encode($items),
+                'total'   => $total
+            ],
+            'timeout' => 5 // ⏱ batas waktu 5 detik agar tidak muter terus
+        ]);
+    } catch (\Throwable $e) {
+        log_message('error', 'Gagal mengirim WA: ' . $e->getMessage());
+    }
+
+    session()->remove('cart');
+
+    return redirect()->back()->with('success', 'Pesanan berhasil diproses dan dikirim ke WhatsApp.');
+}
 
     public function invoice($id)
     {

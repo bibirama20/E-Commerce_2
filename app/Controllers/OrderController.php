@@ -22,16 +22,57 @@ class OrderController extends BaseController
         $this->apiKey          = env('COST_KEY');
     }
 
-    public function produk()
-    {
-        $produk = $this->productModel->findAll();
-        $data = [
-            'produk'   => $produk,
-            'username' => session()->get('username'),
-            'role'     => session()->get('role')
-        ];
-        return view($data['role'] === 'admin' ? 'admin/produk/list' : 'user/produk/list', $data);
+   public function produk()
+{
+    $keyword   = trim($this->request->getGet('keyword'));
+    $minPrice  = $this->request->getGet('min_price');
+    $maxPrice  = $this->request->getGet('max_price');
+    $sort      = $this->request->getGet('sort');
+
+    $builder = new ProductModel();
+
+    // Filter nama
+    if (!empty($keyword)) {
+        $builder = $builder->like('name', $keyword);
     }
+
+    // Filter harga
+    if ($minPrice !== null && is_numeric($minPrice)) {
+        $builder = $builder->where('price >=', floatval($minPrice));
+    }
+
+    if ($maxPrice !== null && is_numeric($maxPrice)) {
+        $builder = $builder->where('price <=', floatval($maxPrice));
+    }
+
+    // Sorting
+    switch ($sort) {
+        case 'price_asc':
+            $builder = $builder->orderBy('price', 'ASC');
+            break;
+        case 'price_desc':
+            $builder = $builder->orderBy('price', 'DESC');
+            break;
+        case 'name_asc':
+            $builder = $builder->orderBy('name', 'ASC');
+            break;
+        default:
+            $builder = $builder->orderBy('id', 'DESC');
+    }
+
+    $produk = $builder->findAll();
+
+    $data = [
+        'produk'    => $produk,
+        'keyword'   => $keyword,
+        'min_price' => $minPrice,
+        'max_price' => $maxPrice,
+        'sort'      => $sort,
+        'role'      => session()->get('role')
+    ];
+
+    return view($data['role'] === 'admin' ? 'admin/produk/list' : 'user/produk/list', $data);
+}
 
     public function tambah($id)
     {
@@ -164,54 +205,19 @@ class OrderController extends BaseController
         $harga = $p['price'] - ($p['price'] * $diskon / 100);
         $subtotal = $qty * $harga;
 
-        $this->orderItemModel->insert([
-            'order_id'   => $orderId,
-            'product_id' => $id,
-            'quantity'   => $qty,
-            'price'      => $harga,
-            'subtotal'   => $subtotal
-        ]);
+            $this->orderItemModel->insert([
+                'order_id'   => $orderId,
+                'product_id' => $id,
+                'quantity'   => $qty,
+                'price'      => $harga,
+                'subtotal'   => $subtotal
+            ]);
+        }
+
+        session()->remove('cart');
+
+        return redirect()->to('/' . session()->get('role') . '/invoice/' . $orderId);
     }
-
-    // Kirim WA setelah simpan
-    $items = [];
-    foreach ($cart as $id => $qty) {
-        $p = $this->productModel->find($id);
-        if (!$p) continue;
-
-        $items[] = [
-            'name'     => $p['name'],
-            'price'    => $p['price'],
-            'quantity' => $qty
-        ];
-    }
-
-    try {
-        $client = \Config\Services::curlrequest();
-        $client->request('POST', base_url('wa/send'), [
-            'form_params' => [
-                'no_hp'   => $no_hp,
-                'nama'    => $nama,
-                'alamat'  => $alamat,
-                'layanan' => json_encode([
-                    'description' => $layanan,
-                    'service'     => $layanan,
-                    'etd'         => $etd
-                ]),
-                'items'   => json_encode($items),
-                'total'   => $total
-            ],
-            'timeout' => 5 // ⏱ batas waktu 5 detik agar tidak muter terus
-        ]);
-    } catch (\Throwable $e) {
-        log_message('error', 'Gagal mengirim WA: ' . $e->getMessage());
-    }
-
-    session()->remove('cart');
-
-    return redirect()->back()->with('success', 'Pesanan berhasil diproses dan dikirim ke WhatsApp.');
-}
-
 
     public function invoice($id)
     {

@@ -17,12 +17,60 @@ class ProductController extends BaseController
 
     // Halaman kelola produk (admin only)
     public function kelola()
-    {
-        $data = [
-            'produk' => $this->productModel->findAll()
-        ];
-        return view('admin/produk/kelola', $data);
+{
+    $keyword   = trim($this->request->getGet('keyword'));
+    $minPrice  = $this->request->getGet('min_price');
+    $maxPrice  = $this->request->getGet('max_price');
+    $sort      = $this->request->getGet('sort');
+
+    // Mulai builder query
+    $builder = $this->productModel;
+
+    // 1. Filter nama produk (jika ada)
+    if (!empty($keyword)) {
+        $builder = $builder->like('name', $keyword);
     }
+
+    // 2. Filter harga minimum
+    if ($minPrice !== null && is_numeric($minPrice)) {
+        $builder = $builder->where('price >=', floatval($minPrice));
+    }
+
+    // 3. Filter harga maksimum
+    if ($maxPrice !== null && is_numeric($maxPrice)) {
+        $builder = $builder->where('price <=', floatval($maxPrice));
+    }
+
+    // 4. Sorting
+    switch ($sort) {
+        case 'name_asc':
+            $builder = $builder->orderBy('name', 'ASC');
+            break;
+        case 'price_asc':
+            $builder = $builder->orderBy('price', 'ASC');
+            break;
+        case 'price_desc':
+            $builder = $builder->orderBy('price', 'DESC');
+            break;
+        default:
+            $builder = $builder->orderBy('id', 'DESC'); // default sorting terbaru
+    }
+
+    // Eksekusi query
+    $produk = $builder->findAll();
+
+    // Kirim ke view
+    $data = [
+        'produk'    => $produk,
+        'keyword'   => $keyword,
+        'min_price' => $minPrice,
+        'max_price' => $maxPrice,
+        'sort'      => $sort
+    ];
+
+    return view('admin/produk/kelola', $data);
+}
+
 
     // Form tambah produk
     public function create()

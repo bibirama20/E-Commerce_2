@@ -48,14 +48,14 @@ class AuthController extends BaseController
         // Admin
         $userModel->insert([
             'username' => 'admin',
-            'password' => password_hash('2345678', PASSWORD_DEFAULT),
+            'password' => password_hash('putuganteng5k', PASSWORD_DEFAULT),
             'role'     => 'admin'
         ]);
 
         // User
         $userModel->insert([
             'username' => 'user',
-            'password' => password_hash('2345678', PASSWORD_DEFAULT),
+            'password' => password_hash('putuayu2k', PASSWORD_DEFAULT),
             'role'     => 'user'
         ]);
 

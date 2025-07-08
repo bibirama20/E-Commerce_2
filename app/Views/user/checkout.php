@@ -91,7 +91,7 @@
                     Batalkan Checkout
                 </a>
                  <a href="<?= base_url(session()->get('role') . '/produk') ?>" class="btn btn-success">
-                    Batalkan Checkout
+                    Lanjut Checkout
                 </a>
             </div>
             </form>

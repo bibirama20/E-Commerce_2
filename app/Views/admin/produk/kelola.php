@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 <?= $this->section('content') ?>
 
-<h2>🛠 Kelola Produk</h2>
+<h2>🛠️ Kelola Produk</h2>
 
 <a href="/admin/kelola-produk/tambah" class="btn btn-success mb-3">+ Tambah Produk</a>
 <a href="/admin/produk/pdf" class="btn btn-danger mb-3 float-end">🖨 Cetak PDF</a>

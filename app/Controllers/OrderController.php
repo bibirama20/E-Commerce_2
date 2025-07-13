@@ -169,22 +169,35 @@ class OrderController extends BaseController
         ]);
     }
 
-  public function checkoutSimpan()
+public function checkoutSimpan()
 {
     $cart = session()->get('cart') ?? [];
     if (empty($cart)) {
         return redirect()->back()->with('error', 'Keranjang kosong.');
     }
 
+    // Ambil data dari form
     $nama     = $this->request->getPost('nama');
     $alamat   = $this->request->getPost('alamat');
     $no_hp    = $this->request->getPost('no_hp');
-    $tujuan   = $this->request->getPost('destination');
+    $tujuan   = $this->request->getPost('kelurahan'); // ✅ name="kelurahan" di form
     $layanan  = $this->request->getPost('shipping_delivery');
     $ongkir   = $this->request->getPost('shipping_cost');
     $etd      = $this->request->getPost('estimasi_hari');
     $total    = $this->request->getPost('total_harga');
 
+    // ✅ Hitung ulang berat total dari cart
+    $totalBerat = 0;
+    foreach ($cart as $id => $qty) {
+        $produk = $this->productModel->find($id);
+        if (!$produk) continue;
+
+        $beratItem = $produk['weight'] ?? 0;
+        if ($beratItem < 1) $beratItem = 1000; // default 1kg
+        $totalBerat += $beratItem * $qty;
+    }
+
+    // ✅ Simpan data pesanan ke tabel orders
     $orderId = $this->orderModel->insert([
         'user_id'           => session()->get('username'),
         'nama'              => $nama,
@@ -197,6 +210,7 @@ class OrderController extends BaseController
         'total'             => $total
     ]);
 
+    // ✅ Simpan semua item ke order_items
     foreach ($cart as $id => $qty) {
         $p = $this->productModel->find($id);
         if (!$p) continue;
@@ -214,7 +228,7 @@ class OrderController extends BaseController
         ]);
     }
 
-    // Kirim WA setelah simpan
+    // ✅ Siapkan data untuk dikirim ke WhatsApp
     $items = [];
     foreach ($cart as $id => $qty) {
         $p = $this->productModel->find($id);
@@ -227,6 +241,7 @@ class OrderController extends BaseController
         ];
     }
 
+    // ✅ Kirim notifikasi WA
     try {
         $client = \Config\Services::curlrequest();
         $client->request('POST', base_url('wa/send'), [
@@ -242,16 +257,18 @@ class OrderController extends BaseController
                 'items'   => json_encode($items),
                 'total'   => $total
             ],
-            'timeout' => 5 // ⏱ batas waktu 5 detik agar tidak muter terus
+            'timeout' => 5
         ]);
     } catch (\Throwable $e) {
         log_message('error', 'Gagal mengirim WA: ' . $e->getMessage());
     }
 
+    // ✅ Bersihkan session cart
     session()->remove('cart');
 
     return redirect()->back()->with('success', 'Pesanan berhasil diproses dan dikirim ke WhatsApp.');
 }
+
 
     public function invoice($id)
     {
@@ -278,77 +295,4 @@ class OrderController extends BaseController
         $pdf->stream('invoice_' . $id . '.pdf', ['Attachment' => false]);
     }
 
-    public function getLocation()
-    {
-        $search = $this->request->getGet('search');
-        $apiKey = getenv('RAJAONGKIR_API_KEY');
-
-        try {
-            $client = \Config\Services::curlrequest();
-            $response = $client->request('GET', 'https://api.rajaongkir.com/starter/city', [
-                'headers' => ['key' => $apiKey]
-            ]);
-
-            $data = json_decode($response->getBody(), true);
-            $results = [];
-
-            if (!empty($data['rajaongkir']['results'])) {
-                foreach ($data['rajaongkir']['results'] as $item) {
-                    if (stripos($item['city_name'], $search) !== false) {
-                        $results[] = [
-                            'id'   => $item['city_id'],
-                            'text' => $item['city_name'] . ', ' . $item['province']
-                        ];
-                    }
-                }
-            }
-
-            return $this->response->setJSON(['results' => $results]);
-        } catch (\Exception $e) {
-            return $this->response->setJSON(['results' => [], 'error' => $e->getMessage()]);
-        }
-    }
-
-    public function getCost()
-    {
-        $destination = $this->request->getGet('destination');
-        $apiKey = getenv('RAJAONGKIR_API_KEY');
-        $origin = getenv('RAJAONGKIR_ORIGIN') ?? '501';
-
-        try {
-            $client = \Config\Services::curlrequest();
-            $response = $client->request('POST', 'https://api.rajaongkir.com/starter/cost', [
-                'headers' => [
-                    'key' => $apiKey,
-                    'content-type' => 'application/x-www-form-urlencoded',
-                ],
-                'form_params' => [
-                    'origin'      => $origin,
-                    'destination' => $destination,
-                    'weight'      => 1000,
-                    'courier'     => 'jne:pos:tiki'
-                ]
-            ]);
-
-            $data = json_decode($response->getBody(), true);
-            $results = [];
-
-            foreach ($data['rajaongkir']['results'] as $courier) {
-                foreach ($courier['costs'] as $cost) {
-                    foreach ($cost['cost'] as $detail) {
-                        $results[] = [
-                            'courier' => $courier['code'],
-                            'service' => $cost['service'],
-                            'etd'     => $detail['etd'],
-                            'cost'    => $detail['value']
-                        ];
-                    }
-                }
-            }
-
-            return $this->response->setJSON(['success' => true, 'data' => $results]);
-        } catch (\Exception $e) {
-            return $this->response->setJSON(['success' => false, 'message' => $e->getMessage()]);
-        }
-    }
 }

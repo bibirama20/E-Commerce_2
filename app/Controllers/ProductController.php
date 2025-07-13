@@ -79,41 +79,44 @@ class ProductController extends BaseController
     }
 
     // Simpan produk baru
-    public function store()
-    {
-        // Validasi input
-        $validation = \Config\Services::validation();
-        $validation->setRules([
-            'name'   => 'required',
-            'price'  => 'required|numeric|greater_than[0]',
-            'stock'  => 'required|integer|greater_than_equal_to[0]',
-            'diskon' => 'permit_empty|integer|greater_than_equal_to[0]|less_than_equal_to[100]',
-            'image'  => 'uploaded[image]|is_image[image]|max_size[image,2048]'
-        ]);
+   public function store()
+{
+    // Validasi input
+    $validation = \Config\Services::validation();
+    $validation->setRules([
+        'name'   => 'required',
+        'price'  => 'required|numeric|greater_than[0]',
+        'stock'  => 'required|integer|greater_than_equal_to[0]',
+        'diskon' => 'permit_empty|integer|greater_than_equal_to[0]|less_than_equal_to[100]',
+        'weight' => 'required|integer|greater_than[0]', // ✅ Validasi berat
+        'image'  => 'uploaded[image]|is_image[image]|max_size[image,2048]'
+    ]);
 
-        if (!$validation->withRequest($this->request)->run()) {
-            return redirect()->back()->withInput()->with('errors', $validation->getErrors());
-        }
-
-        $image = $this->request->getFile('image');
-        $imageName = null;
-
-        if ($image && $image->isValid() && !$image->hasMoved()) {
-            $imageName = $image->getRandomName();
-            $image->move('uploads', $imageName);
-        }
-
-        $data = [
-            'name'   => $this->request->getPost('name'),
-            'price'  => floatval($this->request->getPost('price')),
-            'stock'  => intval($this->request->getPost('stock')),
-            'diskon' => intval($this->request->getPost('diskon')),
-            'image'  => $imageName
-        ];
-
-        $this->productModel->save($data);
-        return redirect()->to('/admin/kelola-produk')->with('success', 'Produk berhasil ditambahkan.');
+    if (!$validation->withRequest($this->request)->run()) {
+        return redirect()->back()->withInput()->with('errors', $validation->getErrors());
     }
+
+    $image = $this->request->getFile('image');
+    $imageName = null;
+
+    if ($image && $image->isValid() && !$image->hasMoved()) {
+        $imageName = $image->getRandomName();
+        $image->move('uploads', $imageName);
+    }
+
+    $data = [
+        'name'   => $this->request->getPost('name'),
+        'price'  => floatval($this->request->getPost('price')),
+        'stock'  => intval($this->request->getPost('stock')),
+        'diskon' => intval($this->request->getPost('diskon')),
+        'weight' => intval($this->request->getPost('weight')), // ✅ Simpan berat
+        'image'  => $imageName
+    ];
+
+    $this->productModel->save($data);
+    return redirect()->to('/admin/kelola-produk')->with('success', 'Produk berhasil ditambahkan.');
+}
+
 
     // Tampilkan form edit produk
     public function edit($id)
@@ -129,51 +132,52 @@ class ProductController extends BaseController
 
     // Simpan update produk
     public function update($id)
-    {
-        $produkLama = $this->productModel->find($id);
+{
+    $produkLama = $this->productModel->find($id);
 
-        if (!$produkLama) {
-            return redirect()->to('/admin/kelola-produk')->with('error', 'Produk tidak ditemukan.');
-        }
-
-        // Validasi
-        $validation = \Config\Services::validation();
-        $validation->setRules([
-            'name'   => 'required',
-            'price'  => 'required|numeric|greater_than[0]',
-            'stock'  => 'required|integer|greater_than_equal_to[0]',
-            'diskon' => 'permit_empty|integer|greater_than_equal_to[0]|less_than_equal_to[100]',
-            'image'  => 'permit_empty|is_image[image]|max_size[image,2048]'
-        ]);
-
-        if (!$validation->withRequest($this->request)->run()) {
-            return redirect()->back()->withInput()->with('errors', $validation->getErrors());
-        }
-
-        $image = $this->request->getFile('image');
-        $imageName = $produkLama['image'];
-
-        if ($image && $image->isValid() && !$image->hasMoved()) {
-            $imageName = $image->getRandomName();
-            $image->move('uploads', $imageName);
-
-            // Hapus gambar lama jika ada
-            if (!empty($produkLama['image']) && file_exists('uploads/' . $produkLama['image'])) {
-                unlink('uploads/' . $produkLama['image']);
-            }
-        }
-
-        $data = [
-            'name'   => $this->request->getPost('name'),
-            'price'  => floatval($this->request->getPost('price')),
-            'stock'  => intval($this->request->getPost('stock')),
-            'diskon' => intval($this->request->getPost('diskon')),
-            'image'  => $imageName
-        ];
-
-        $this->productModel->update($id, $data);
-        return redirect()->to('/admin/kelola-produk')->with('success', 'Produk berhasil diperbarui.');
+    if (!$produkLama) {
+        return redirect()->to('/admin/kelola-produk')->with('error', 'Produk tidak ditemukan.');
     }
+
+    $validation = \Config\Services::validation();
+    $validation->setRules([
+        'name'   => 'required',
+        'price'  => 'required|numeric|greater_than[0]',
+        'stock'  => 'required|integer|greater_than_equal_to[0]',
+        'diskon' => 'permit_empty|integer|greater_than_equal_to[0]|less_than_equal_to[100]',
+        'weight' => 'required|integer|greater_than[0]', // ✅ Validasi berat
+        'image'  => 'permit_empty|is_image[image]|max_size[image,2048]'
+    ]);
+
+    if (!$validation->withRequest($this->request)->run()) {
+        return redirect()->back()->withInput()->with('errors', $validation->getErrors());
+    }
+
+    $image = $this->request->getFile('image');
+    $imageName = $produkLama['image'];
+
+    if ($image && $image->isValid() && !$image->hasMoved()) {
+        $imageName = $image->getRandomName();
+        $image->move('uploads', $imageName);
+
+        if (!empty($produkLama['image']) && file_exists('uploads/' . $produkLama['image'])) {
+            unlink('uploads/' . $produkLama['image']);
+        }
+    }
+
+    $data = [
+        'name'   => $this->request->getPost('name'),
+        'price'  => floatval($this->request->getPost('price')),
+        'stock'  => intval($this->request->getPost('stock')),
+        'diskon' => intval($this->request->getPost('diskon')),
+        'weight' => intval($this->request->getPost('weight')), // ✅ Simpan berat
+        'image'  => $imageName
+    ];
+
+    $this->productModel->update($id, $data);
+    return redirect()->to('/admin/kelola-produk')->with('success', 'Produk berhasil diperbarui.');
+}
+
 
     // Hapus produk
     public function delete($id)

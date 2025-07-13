@@ -49,6 +49,7 @@
             <th>Diskon (%)</th>
             <th>Harga Setelah Diskon</th>
             <th>Stok</th>
+            <th>Berat (gram)</th> <!-- ✅ Tambahkan kolom Berat -->
             <th>Gambar</th>
             <th>Aksi</th>
         </tr>
@@ -67,6 +68,7 @@
                 ?>
             </td>
             <td><?= esc($p['stock']) ?></td>
+            <td><?= esc($p['weight'] ?? '-') ?></td> <!-- ✅ Tampilkan berat produk -->
             <td>
                 <?php if (!empty($p['image'])): ?>
                     <img src="<?= base_url('uploads/' . $p['image']) ?>" width="80">
@@ -83,5 +85,6 @@
         <?php endforeach ?>
     </tbody>
 </table>
+
 
 <?= $this->endSection() ?>

@@ -82,18 +82,25 @@ class KeranjangController extends BaseController
         return redirect()->to('/pembeli/keranjang')->with('success', 'Produk dihapus dari keranjang.');
     }
 
-    public function update()
-    {
-        $quantities = $this->request->getPost('quantities');
-        $keranjang = session()->get('keranjang') ?? [];
+public function update()
+{
+    $quantities = $this->request->getPost('quantities');
 
-        foreach ($quantities as $id => $qty) {
-            if (isset($keranjang[$id])) {
-                $keranjang[$id]['qty'] = (int)$qty;
+    if (is_array($quantities)) {
+        foreach ($quantities as $productId => $quantity) {
+            if (isset($_SESSION['cart'][$productId])) {
+                $_SESSION['cart'][$productId]['quantity'] = (int) $quantity;
             }
         }
-
-        session()->set('keranjang', $keranjang);
-        return redirect()->to('/pembeli/keranjang')->with('success', 'Jumlah produk berhasil diperbarui.');
     }
+
+    // Jika user klik "Lanjut ke Checkout" → redirect ke halaman checkout
+    if ($this->request->getMethod() == 'post' && strpos(current_url(), '/checkout') !== false) {
+        return redirect()->to('/' . session()->get('role') . '/checkout');
+    }
+
+    return redirect()->back()->with('success', 'Keranjang berhasil diperbarui.');
+}
+
+
 }

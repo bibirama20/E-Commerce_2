@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-
+use GuzzleHttp\Client;
 
 class RajaOngkirController extends Controller
 {
@@ -12,67 +12,78 @@ class RajaOngkirController extends Controller
 
     public function __construct()
     {
-        helper('number');
-        helper('form');
-        $this->client = new \GuzzleHttp\Client();
+        helper(['number', 'form']);
+        $this->client = new Client();
         $this->apiKey = env('COST_KEY');
     }
 
     public function getLocation()
     {
-            //keyword pencarian yang dikirimkan dari halaman checkout
         $search = $this->request->getGet('search');
 
         $response = $this->client->request(
-            'GET', 
-            'https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search='.$search.'&limit=50', [
+            'GET',
+            'https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search=' . $search . '&limit=50', [
                 'headers' => [
                     'accept' => 'application/json',
-                    'key' => $this->apiKey,
+                    'key'    => $this->apiKey,
                 ],
             ]
         );
 
-        $body = json_decode($response->getBody(), true); 
+        $body = json_decode($response->getBody(), true);
         return $this->response->setJSON($body['data']);
     }
+public function getCost()
+{
+    $destination = $this->request->getGet('destination');
+    $weight = $this->request->getGet('weight');
 
-    public function getCost()
-    { 
-            //ID lokasi yang dikirimkan dari halaman checkout
-        $destination = $this->request->getGet('destination');
+    log_message('debug', '💡 Berat dari AJAX: ' . $weight);
 
-            //parameter daerah asal pengiriman, berat produk, dan kurir dibuat statis
-        //valuenya => 64999 : PEDURUNGAN TENGAH , 1000 gram, dan JNE
-        $response = $this->client->request(
-            'POST', 
-            'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
-                'multipart' => [
-                    [
-                        'name' => 'origin',
-                        'contents' => '64999'
-                    ],
-                    [
-                        'name' => 'destination',
-                        'contents' => $destination
-                    ],
-                    [
-                        'name' => 'weight',
-                        'contents' => '1000'
-                    ],
-                    [
-                        'name' => 'courier',
-                        'contents' => 'jne'
-                    ]
-                ],
-                'headers' => [
-                    'accept' => 'application/json',
-                    'key' => $this->apiKey,
-                ],
-            ]
-        );
-
-        $body = json_decode($response->getBody(), true); 
-        return $this->response->setJSON($body['data']);
+    if (!$weight || $weight < 1) {
+        $weight = 1000;
     }
+
+    $couriers = ['jne', 'pos', 'tiki', 'sicepat', 'anteraja', 'sap', 'jnt']; // ✅ tambahkan J&T
+
+    $allResults = [];
+
+    foreach ($couriers as $courier) {
+        try {
+            $response = $this->client->request(
+                'POST',
+                'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+                    'multipart' => [
+                        ['name' => 'origin', 'contents' => '64999'],
+                        ['name' => 'destination', 'contents' => $destination],
+                        ['name' => 'weight', 'contents' => $weight],
+                        ['name' => 'courier', 'contents' => $courier]
+                    ],
+                    'headers' => [
+                        'accept' => 'application/json',
+                        'key' => $this->apiKey,
+                    ],
+                ]
+            );
+
+            $body = json_decode($response->getBody(), true);
+
+            if (isset($body['data']) && is_array($body['data'])) {
+                foreach ($body['data'] as $item) {
+                    $allResults[] = $item;
+                }
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', "Courier $courier gagal: " . $e->getMessage());
+            continue;
+        }
+    }
+
+    log_message('debug', '📦 Semua layanan: ' . json_encode($allResults));
+
+    return $this->response->setJSON($allResults);
+}
+
 }

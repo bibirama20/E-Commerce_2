@@ -20,10 +20,16 @@
             value="<?= $produk['diskon'] ?? 0 ?>" min="0" max="100">
     </div>
 
-
     <div class="mb-3">
         <label for="stock" class="form-label">Stok</label>
         <input type="number" name="stock" id="stock" class="form-control" value="<?= $produk['stock'] ?>" required>
+    </div>
+
+    <!-- Input Berat Produk -->
+    <div class="mb-3">
+        <label for="weight" class="form-label">Berat (gram)</label>
+        <input type="number" name="weight" id="weight" class="form-control" value="<?= $produk['weight'] ?? 0 ?>" min="1" required>
+        <div class="form-text">Masukkan berat produk dalam gram (misal: 250 untuk 250gr)</div>
     </div>
 
     <div class="mb-3">

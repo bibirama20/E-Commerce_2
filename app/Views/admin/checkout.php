@@ -1,30 +1,46 @@
 <?= $this->extend('layouts/main') ?>
 <?= $this->section('content') ?>
 
+<?php
+$totalProduk = 0;
+$totalBerat = 0;
+foreach ($items as $item) {
+    $diskon = $item['diskon'] ?? 0;
+    $hargaAwal = $item['price'];
+    $hargaDiskon = $hargaAwal - ($hargaAwal * $diskon / 100);
+    $subtotal = $hargaDiskon * $item['quantity'];
+    $totalProduk += $subtotal;
+
+    $beratItem = $item['weight'] ?? 0;
+    if ($beratItem < 1) $beratItem = 1000;
+    $totalBerat += $beratItem * $item['quantity'];
+}
+?>
+
 <div class="container mt-4">
     <h2 class="mb-4">Checkout</h2>
     <div class="row">
-        <!-- FORM CHECKOUT -->
+        <!-- FORM -->
         <div class="col-md-6">
             <form id="checkoutForm" method="post" action="/<?= $role ?>/checkout/simpan">
                 <div class="mb-3">
-                    <label for="nama" class="form-label">Nama</label>
+                    <label for="nama">Nama</label>
                     <input type="text" name="nama" id="nama" class="form-control" required>
                 </div>
                 <div class="mb-3">
-                    <label for="no_hp" class="form-label">No HP</label>
+                    <label for="no_hp">No HP</label>
                     <input type="text" name="no_hp" id="no_hp" class="form-control" required>
                 </div>
-                <div class="col-12">
-                    <label for="alamat" class="form-label">Alamat</label>
-                    <input type="text" class="form-control" id="alamat" name="alamat">
-                </div> 
-                <div class="col-12">
-                    <label for="kelurahan" class="form-label">Kelurahan</label>
+                <div class="mb-3">
+                    <label for="alamat">Alamat</label>
+                    <input type="text" name="alamat" id="alamat" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="kelurahan">Kelurahan</label>
                     <select class="form-control" name="kelurahan" id="kelurahan" required></select>
                 </div>
-                <div class="col-12">
-                    <label for="layanan" class="form-label">Layanan</label>
+                <div class="mb-3">
+                    <label for="layanan">Layanan</label>
                     <select class="form-control" name="layanan" id="layanan" required></select>
                 </div>
 
@@ -35,7 +51,7 @@
                 <input type="hidden" id="total_harga" name="total_harga">
         </div>
 
-        <!-- RINGKASAN KERANJANG -->
+        <!-- RINGKASAN -->
         <div class="col-md-6">
             <h5>Ringkasan Keranjang</h5>
             <table class="table table-bordered">
@@ -48,13 +64,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php $totalProduk = 0; foreach ($items as $item): ?>
+                    <?php foreach ($items as $item): ?>
                         <?php
                             $diskon = $item['diskon'] ?? 0;
                             $hargaAwal = $item['price'];
                             $hargaDiskon = $hargaAwal - ($hargaAwal * $diskon / 100);
                             $subtotal = $hargaDiskon * $item['quantity'];
-                            $totalProduk += $subtotal;
                         ?>
                         <tr>
                             <td><?= esc($item['name']) ?></td>
@@ -78,22 +93,17 @@
             </table>
 
             <div class="mb-3">
-                <label><strong>Total Harga "Harga Produk + Ongkir"</strong></label>
-                <p id="total"><em>Silakan pilih layanan untuk menghitung total</em></p>
+                <label><strong>Total Harga (Produk + Ongkir)</strong></label>
+                <p id="total"><em>Silakan pilih layanan</em></p>
             </div>
             <div class="mb-3">
                 <label><strong>Estimasi Pengiriman</strong></label>
                 <p id="estimasi"><em>Belum dipilih</em></p>
             </div>
 
-            <div class="text-end d-flex justify-content-between mt-4">
-                <a href="<?= base_url(session()->get('role') . '/produk') ?>" class="btn btn-danger">
-                    Batalkan Checkout
-                </a>
-               <button type="submit" class="btn btn-success">
-                    Lanjut Checkout
-                </button>
-
+            <div class="d-flex justify-content-between">
+                <a href="<?= base_url($role . '/produk') ?>" class="btn btn-danger">Batalkan</a>
+                <button type="submit" class="btn btn-success">Lanjut Checkout</button>
             </div>
             </form>
         </div>
@@ -108,14 +118,11 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-const BASE_URL = '<?= base_url() ?>';
+let totalProduk = <?= $totalProduk ?>;
+let totalBerat = <?= $totalBerat ?>;
 let ongkir = 0;
-let totalProduk = <?= $totalProduk ?? 0 ?>;
 
 $(document).ready(function() {
-    var ongkir = 0;
-    var total = 0;
-
     hitungTotal();
 
     $('#kelurahan').select2({
@@ -125,32 +132,28 @@ $(document).ready(function() {
             dataType: 'json',
             delay: 1500,
             data: function (params) {
-                return {
-                    search: params.term
-                };
+                return { search: params.term };
             },
             processResults: function (data) {
                 return {
-                    results: data.map(function(item) {
-                        return {
-                            id: item.id,
-                            text: item.subdistrict_name + ", " + item.district_name + ", " + item.city_name + ", " + item.province_name + ", " + item.zip_code
-                        };
-                    })
+                    results: data.map(item => ({
+                        id: item.id,
+                        text: `${item.subdistrict_name}, ${item.district_name}, ${item.city_name}, ${item.province_name}, ${item.zip_code}`
+                    }))
                 };
             },
             cache: true
         },
+        minimumInputLength: 3,
         language: {
             inputTooShort: () => 'Ketik minimal 3 huruf...',
             searching: () => '🔄 Mencari lokasi...',
             noResults: () => '❌ Tidak ditemukan.'
-        },
-        minimumInputLength: 3
+        }
     });
 
     $("#kelurahan").on('change', function() {
-        var id_kelurahan = $(this).val();
+        let id_kelurahan = $(this).val();
         $("#layanan").empty();
         ongkir = 0;
 
@@ -158,36 +161,65 @@ $(document).ready(function() {
             url: "<?= site_url('get-cost') ?>",
             type: 'GET',
             data: {
-                'destination': id_kelurahan,
+                destination: id_kelurahan,
+                weight: totalBerat
             },
             dataType: 'json',
             success: function(data) {
-                data.forEach(function(item) {
-                    var label = item["description"] + " (" + item["service"] + ") - Estimasi " + item["etd"] + " Hari - Rp" + parseInt(item["cost"]).toLocaleString('id-ID');
-                    $("#layanan").append($('<option>', {
-                        value: JSON.stringify(item),
-                        text: label
-                    }));
+                console.log("📦 Response layanan:", data);
+                $("#layanan").empty();
+
+                data.forEach(item => {
+                    let biaya = 0;
+
+                    if (typeof item.cost === 'number') {
+                        biaya = item.cost;
+                    } else if (Array.isArray(item.cost) && item.cost[0]?.value) {
+                        biaya = parseInt(item.cost[0].value);
+                        item.etd = item.cost[0].etd || item.etd;
+                        item.cost = biaya;
+                    }
+
+                    if (item.description && item.service && biaya > 0) {
+                        let label = `${item.description} (${item.service}) - Estimasi ${item.etd} Hari - Rp${biaya.toLocaleString('id-ID')}`;
+                        $("#layanan").append($('<option>', {
+                            value: JSON.stringify(item),
+                            text: label
+                        }));
+                    }
                 });
+
+                if ($("#layanan option").length > 0) {
+                    $("#layanan").val($("#layanan option:first").val()).trigger('change');
+                }
+
                 hitungTotal();
-            },
+            }
         });
     });
 
     $("#layanan").on('change', function() {
         let selected = JSON.parse($(this).val());
-        ongkir = parseInt(selected.cost);
-        $("#ongkir").val(selected.cost);
+        let biaya = 0;
+
+        if (typeof selected.cost === 'number') {
+            biaya = selected.cost;
+        } else if (Array.isArray(selected.cost) && selected.cost[0]?.value) {
+            biaya = parseInt(selected.cost[0].value);
+            selected.etd = selected.cost[0].etd || selected.etd;
+        }
+
+        ongkir = biaya;
+        $("#ongkir").val(biaya);
         $("#service").val(selected.service);
         $("#etd").val(selected.etd);
-        $("#estimasi").text(selected.etd + " Hari");
+        $("#estimasi").text(`${selected.etd} Hari`);
         hitungTotal();
     });
 
     function hitungTotal() {
-        total = ongkir + totalProduk;
-
-        $("#total").html("Rp " + total.toLocaleString('id-ID'));
+        let total = totalProduk + ongkir;
+        $("#total").text("Rp " + total.toLocaleString('id-ID'));
         $("#total_harga").val(total);
     }
 });

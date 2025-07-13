@@ -11,6 +11,10 @@
 
     <input name="diskon" type="number" placeholder="Diskon (%)" class="form-control mb-2" min="0" max="100">
 
+    <!-- Tambahkan input berat -->
+    <input name="weight" type="number" placeholder="Berat (gram)" class="form-control mb-2" min="1" required>
+    <div class="form-text mb-2">Berat produk dalam gram, misal 250 = 250gr</div>
+
     <input type="file" name="image" class="form-control mb-2" required>
     <div class="form-text mb-2">Pilih gambar produk (.jpg, .png), maksimal 2MB</div>
 

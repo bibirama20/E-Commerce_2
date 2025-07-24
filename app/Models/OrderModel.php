@@ -10,7 +10,8 @@ class OrderModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = [
         'user_id', 'total', 'city', 'shipping_cost',
-        'shipping_delivery', 'estimasi', 'nama', 'alamat', 'no_hp', 'created_at'
+        'shipping_delivery', 'estimasi', 'nama', 'alamat', 'no_hp',
+        'status', 'created_at', 'updated_at' // ✅ tambahkan ini
     ];
     protected $useTimestamps = true;
 }

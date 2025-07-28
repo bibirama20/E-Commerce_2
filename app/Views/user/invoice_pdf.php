@@ -24,12 +24,12 @@
         }
 
         .header {
-            border-bottom: 2px solid #28a745;
+            border-bottom: 2px solid #007bff;
             margin-bottom: 20px;
         }
 
         .header h2 {
-            color: #28a745;
+            color: #007bff;
         }
 
         .info p {
@@ -38,8 +38,8 @@
 
         .label-status {
             display: inline-block;
-            background-color: #d4edda;
-            color: #155724;
+            background-color: #a7d1feff;
+            color: #007bff;
             padding: 3px 8px;
             border-radius: 5px;
             font-size: 13px;
@@ -60,7 +60,7 @@
         }
 
         th {
-            background-color: #28a745;
+            background-color: #007bff;
             color: white;
         }
 

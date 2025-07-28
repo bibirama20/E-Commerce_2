@@ -4,14 +4,67 @@
     <meta charset="utf-8">
     <title>Laporan Barang Terjual</title>
     <style>
-        body { font-family: sans-serif; font-size: 12px; }
-        h2 { text-align: center; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #007bff;
+        }
+        .header p {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+        .tanggal-cetak {
+            text-align: right;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #141414ff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+            text-align: left;
+            font-size: 11px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+            .footer {
+            margin-top: 30px;
+            text-align: right;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
+
+    <div class="header">
+        <h1>Toko Zetani</h1>
+        <p>Jl. Nasional, Semarang</p>
+        <p>Telp: (000) 00000</p>
+    </div>
+
+    <div class="tanggal-cetak">
+        Dicetak: <?= date('d-m-Y H:i') ?>
+    </div>
 
     <h2>LAPORAN BARANG TERJUAL</h2>
 
@@ -54,6 +107,9 @@
             ?>
         </tbody>
     </table>
+     <div class="footer">
+        Laporan ini dihasilkan secara otomatis.
+    </div>
 
 </body>
 </html>

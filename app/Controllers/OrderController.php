@@ -9,6 +9,7 @@ use App\Models\UserModel;
 use CodeIgniter\Controller;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use CodeIgniter\Cart\Cart;
 use CodeIgniter\I18n\Time;
 
 
@@ -17,6 +18,8 @@ class OrderController extends BaseController
     protected $productModel, $orderModel, $orderItemModel;
     protected $client;
     protected $apiKey;
+    protected $cart;
+
 
     public function __construct()
     {
@@ -24,8 +27,7 @@ class OrderController extends BaseController
         $this->orderModel      = new OrderModel();
         $this->orderItemModel  = new OrderItemModel();
         $this->client          = new \GuzzleHttp\Client();
-        $this->apiKey          = env('COST_KEY');
-    }
+        $this->apiKey          = env('COST_KEY');    }
 public function index()  
 {
     $orderModel = new \App\Models\OrderModel();
@@ -58,12 +60,14 @@ public function index()
         ->findAll();
 
     // ✅ 3. Siapkan struktur default
-    $jumlahStatus = [
-        'belum bayar' => 0,
-        'dikemas'     => 0,
-        'dikirim'     => 0,
-        'selesai'     => 0,
-    ];
+        $jumlahStatus = [
+            'belum bayar' => 0,
+            'dikemas'     => 0,
+            'dikirim'     => 0,
+            'selesai'     => 0,
+            'dibatalkan'  => 0,
+        ];
+
 
     foreach ($statusCounts as $row) {
         $key = trim($row['status_lower']);
@@ -202,33 +206,51 @@ public function index()
         return redirect()->back()->with('success', 'Keranjang berhasil diperbarui.');
     }
 
-    public function checkout()
-    {
-        $cart = session()->get('cart') ?? [];
-        $items = [];
-        $total = 0;
+public function checkout()
+{
+    $items = session()->get('checkout_items');
 
-        foreach ($cart as $id => $qty) {
-            $p = $this->productModel->find($id);
-            if (!$p) continue;
-
-            $diskon = $p['diskon'] ?? 0;
-            $hargaDiskon = $p['price'] - ($p['price'] * $diskon / 100);
-            $subtotal = $qty * $hargaDiskon;
-
-            $p['quantity'] = $qty;
-            $p['subtotal'] = $subtotal;
-            $items[] = $p;
-
-            $total += $subtotal;
-        }
-
-        return view(session()->get('role') . '/checkout', [
-            'items' => $items,
-            'total' => $total,
-            'role'  => session()->get('role')
-        ]);
+    // Jika belum menekan tombol checkout
+    if (!$items || count($items) === 0) {
+        return redirect()->to('/user/keranjang')->with('error', 'Silakan pilih barang untuk checkout terlebih dahulu.');
     }
+
+    $total = 0;
+    foreach ($items as $item) {
+        $total += $item['subtotal'];
+    }
+
+    return view('user/checkout', [
+        'items' => $items,
+        'total' => $total,
+        'role' => 'user'
+    ]);
+}
+
+
+public function prosesCheckout()
+{
+    $cart = session()->get('cart');
+
+    if (!$cart || count($cart) === 0) {
+        return redirect()->back()->with('error', 'Keranjang masih kosong');
+    }
+
+    // Simpan cart sementara ke session checkout_items
+    session()->set('checkout_items', $cart);
+
+    return redirect()->to('/user/checkout');
+}
+
+
+public function simpanProdukTerpilih()
+{
+    $selected = $this->request->getPost('selected_ids'); // misal: "1,3,5"
+    $selectedIds = explode(',', $selected);
+    session()->set('checkout_selected', $selectedIds);
+
+    return redirect()->to('/user/checkout'); // Atau redirect ke halaman form pengiriman
+}
 
     public function checkoutSimpan()
     {
@@ -295,6 +317,20 @@ public function index()
 
     }
 
+public function checkoutPilih()
+{
+    $selected = $this->request->getPost('selected_items') ?? [];
+
+    if (empty($selected)) {
+        return redirect()->back()->with('error', 'Pilih minimal 1 barang untuk checkout.');
+    }
+
+    // Cast ke int untuk mencegah mismatch saat dicari di $cart
+    $selected = array_map('intval', $selected);
+
+    session()->set('checkout_selected', $selected);
+    return redirect()->to('/' . session()->get('role') . '/checkout');
+}
 
    public function invoice($id)
 {
@@ -402,6 +438,7 @@ public function adminIndex()
         'dikemas'     => 0,
         'dikirim'     => 0,
         'selesai'     => 0,
+        'dibatalkan'     => 0,
     ];
 
     foreach ($statusCounts as $row) {
@@ -552,14 +589,19 @@ public function pesanan()
     $status = $this->request->getGet('status');
     $keyword = $this->request->getGet('keyword');
 
-    $builder = $orderModel->where('user_id', $userId);
+    // Mulai query dasar untuk user terkait
+    $builder = $orderModel
+        ->where('orders.user_id', $userId)
+        ->select('orders.*, orders.nama AS nama_pemesan'); // ✅ Tambahkan nama pemesan
 
+    // Filter berdasarkan status jika ada
     if ($status) {
-        $builder->where('status', $status);
+        $builder->where('orders.status', $status);
     }
 
-    // Jika ada keyword, cari di order dan item produk
+    // Filter berdasarkan keyword jika ada
     if ($keyword) {
+        // Cari order_id berdasarkan produk yang cocok dengan keyword
         $orderIdsByProduct = $orderItemModel
             ->select('order_id')
             ->join('products', 'products.id = order_items.product_id')
@@ -568,30 +610,44 @@ public function pesanan()
             ->findColumn('order_id');
 
         $builder->groupStart()
-                ->like('nama', $keyword)
-                ->orLike('alamat', $keyword)
-                ->orLike('shipping_delivery', $keyword)
-                ->orLike('status', $keyword);
+            ->like('orders.nama', $keyword)
+            ->orLike('orders.alamat', $keyword)
+            ->orLike('orders.shipping_delivery', $keyword)
+            ->orLike('orders.status', $keyword);
 
         if (!empty($orderIdsByProduct)) {
-            $builder->orWhereIn('id', $orderIdsByProduct);
+            $builder->orWhereIn('orders.id', $orderIdsByProduct);
         }
 
         $builder->groupEnd();
     }
 
-    $orders = $builder->orderBy('created_at', 'DESC')->findAll();
+    // Ambil semua pesanan user dengan filter di atas
+    $orders = $builder->orderBy('orders.created_at', 'DESC')->findAll();
 
-    // Proses status otomatis dan ambil item pesanan
+    // Cek setiap pesanan untuk update status otomatis
     foreach ($orders as &$order) {
-        if ($order['status'] === 'Dikirim' && isset($order['updated_at'])) {
-            $updatedAt = Time::parse($order['updated_at']);
-            if ($updatedAt->addDays(3)->isBefore(Time::now())) {
+        // ✅ Otomatis batalkan jika belum bayar lebih dari 24 jam
+        if ($order['status'] === 'Belum Bayar' && !empty($order['created_at'])) {
+            $createdAt = \CodeIgniter\I18n\Time::parse($order['created_at'], 'Asia/Jakarta');
+            $now = \CodeIgniter\I18n\Time::now('Asia/Jakarta');
+
+            if ($createdAt->addHours(24)->isBefore($now)) {
+                $orderModel->update($order['id'], ['status' => 'Dibatalkan']);
+                $order['status'] = 'Dibatalkan'; // Update status lokal juga
+            }
+        }
+
+        // ✅ Otomatis menjadi "Selesai" jika sudah dikirim lebih dari 3 hari
+        if ($order['status'] === 'Dikirim' && !empty($order['updated_at'])) {
+            $updatedAt = \CodeIgniter\I18n\Time::parse($order['updated_at'], 'Asia/Jakarta');
+            if ($updatedAt->addDays(3)->isBefore(\CodeIgniter\I18n\Time::now('Asia/Jakarta'))) {
                 $orderModel->update($order['id'], ['status' => 'Selesai']);
                 $order['status'] = 'Selesai';
             }
         }
 
+        // ✅ Ambil item produk untuk setiap pesanan
         $order['items'] = $orderItemModel
             ->select('order_items.*, products.name')
             ->join('products', 'products.id = order_items.product_id')
@@ -624,6 +680,7 @@ public function selesaikanPesanan($id)
 
     return redirect()->to('/user/pesanan');
 }
+
 
 public function invoicePdf($id)
 {
@@ -697,5 +754,142 @@ public function ubahStatus($id)
 
     return redirect()->back()->with('success', "Status diubah menjadi $statusSelanjutnya.");
 }
+
+public function bayar($id)
+{
+    $orderModel = new \App\Models\OrderModel();
+    $order = $orderModel->find($id);
+
+    if (!$order || $order['user_id'] != session()->get('id')) {
+        return redirect()->to('/user/pesanan')->with('error', 'Data tidak ditemukan');
+    }
+
+    return view('user/bayar', ['order' => $order]);
+}
+public function gantiMetode($id)
+{
+    $orderModel = new \App\Models\OrderModel();
+    $order = $orderModel->find($id);
+
+    if (!$order || $order['user_id'] != session()->get('id')) {
+        return redirect()->to('/user/pesanan')->with('error', 'Data tidak valid');
+    }
+
+    // Hanya boleh ganti jika belum pernah
+    if ($order['payment_changed']) {
+        return redirect()->to('/user/pesanan')->with('error', 'Metode hanya bisa diganti sekali');
+    }
+
+    return view('user/ganti_metode', ['order' => $order]);
+}
+
+public function updateMetode($id)
+{
+    $orderModel = new \App\Models\OrderModel();
+    $metodeBaru = $this->request->getPost('payment_method');
+
+    $order = $orderModel->find($id);
+
+    if (!$order || $order['user_id'] != session()->get('id') || $order['payment_changed']) {
+        return redirect()->to('/user/pesanan')->with('error', 'Tidak diizinkan');
+    }
+
+    $orderModel->update($id, [
+        'payment_method' => $metodeBaru,
+        'payment_changed' => 1
+    ]);
+
+    return redirect()->to('/user/pesanan/bayar/' . $id)->with('success', 'Metode pembayaran diperbarui.');
+}
+
+public function simpanOrder()
+{
+    $cart = session()->get('cart');
+
+    if (empty($cart)) {
+        return redirect()->back()->with('error', 'Keranjang kosong.');
+    }
+
+    $orderModel = new OrderModel();
+    $orderItemModel = new OrderItemModel();
+
+    // Simpan data order
+    $dataOrder = [
+        'user_id'       => session()->get('user_id'),
+        'nama'          => $this->request->getPost('nama'),
+        'no_hp'         => $this->request->getPost('no_hp'),
+        'alamat'        => $this->request->getPost('alamat'),
+        'shipping_delivery' => $this->request->getPost('shipping_delivery'),
+        'estimasi'      => $this->request->getPost('estimasi'),
+        'total'         => $this->request->getPost('total'),
+        'status'        => 'Dikemas', // ⬅️ Ubah otomatis dari awal
+    ];
+
+    $orderModel->insert($dataOrder);
+    $orderId = $orderModel->getInsertID();
+
+    foreach ($cart as $item) {
+        $orderItemModel->insert([
+            'order_id'  => $orderId,
+            'product_id'=> $item['id'],
+            'quantity'  => $item['qty'],
+            'price'     => $item['price'],
+            'subtotal'  => $item['subtotal'],
+        ]);
+    }
+
+    // Hapus session cart setelah order disimpan
+    session()->remove('cart');
+
+    return redirect()->to('/user/orders')->with('success', 'Pesanan berhasil dibuat dan akan segera dikemas.');
+}
+
+public function pilih()
+{
+    $cart = session()->get('cart') ?? [];
+    $selectedIds = $this->request->getPost('selected_items') ?? [];
+    $quantities = $this->request->getPost('quantities') ?? [];
+
+    if (empty($selectedIds)) {
+        session()->setFlashdata('error', 'Silakan pilih minimal satu produk untuk checkout.');
+        return redirect()->back();
+    }
+
+    $selectedIds = array_map('intval', $selectedIds); // pastikan int
+    $selectedItems = [];
+
+    foreach ($selectedIds as $id) {
+        if (!isset($cart[$id])) continue;
+
+        $product = $this->productModel->find($id);
+        if (!$product) continue;
+
+        $qty = isset($quantities[$id]) ? (int)$quantities[$id] : $cart[$id];
+        $diskon = $product['diskon'] ?? 0;
+        $hargaDiskon = $product['price'] - ($product['price'] * $diskon / 100);
+        $subtotal = $qty * $hargaDiskon;
+
+        $product['quantity'] = $qty;
+        $product['subtotal'] = $subtotal;
+
+        $selectedItems[] = $product;
+    }
+
+    if (empty($selectedItems)) {
+        session()->setFlashdata('error', 'Produk yang dipilih tidak ditemukan di keranjang.');
+        return redirect()->back();
+    }
+
+    session()->set('checkout_items', $selectedItems);
+    return redirect()->to('/user/checkout');
+}
+
+public function batalkanCheckout()
+{
+    session()->remove('checkout_items');
+    return redirect()->to('/user/keranjang');
+}
+
+
 
 }

@@ -2,7 +2,10 @@
 <?= $this->section('content') ?>
 
 <div class="container mt-4">
-    <h2 class="mb-4">📊 Statistik Penjualan</h2>
+     <h2 class="mb-4 text-center text-primary fw-bold">
+    <i class="bi bi-bar-chart-fill me-2"></i> Statistik Penjualan
+    </h2>
+    <hr class="border-2 border-primary opacity-50 mb-4" />
 
     <div class="row">
         <!-- Total Pendapatan -->
@@ -38,7 +41,11 @@
 
     <hr>
 
-    <h4 class="mt-4">📅 Grafik Penjualan Bulanan</h4>
+   <h2 class="text-primary text-center fw-bold">
+    <i class="bi bi-calendar-week-fill me-2"></i> Grafik Penjualan Bulanan
+    </h2>
+    <hr class="border-2 border-primary opacity-50 mb-4" />
+
     <canvas id="chartPenjualan"></canvas>
 </div>
 

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\ProductModel;
 use App\Models\OrderModel;
 use App\Controllers\BaseController;
+use App\Models\UserModel;
 
 class DashboardController extends BaseController
 {
@@ -79,6 +80,118 @@ public function statistik()
         'bulan' => $bulan,
         'totalPerBulan' => $totalPerBulan
     ]);
+}
+
+public function daftarUser()
+{
+    $userModel = new \App\Models\UserModel();
+    $search = $this->request->getGet('q');
+
+    $query = $userModel;
+    if ($search) {
+        $query = $query->like('username', $search);
+    }
+
+    $users = $query->findAll();
+
+    $adminUsers = array_filter($users, fn($user) => $user['role'] === 'admin');
+    $normalUsers = array_filter($users, fn($user) => $user['role'] === 'user');
+
+    return view('admin/daftar_user', [
+        'adminUsers'  => $adminUsers,
+        'normalUsers' => $normalUsers,
+        'search'      => $search,
+    ]);
+}
+
+
+    public function editUser($id)
+{
+    $userModel = new \App\Models\UserModel();
+    $user = $userModel->find($id);
+
+    if (!$user) {
+        return redirect()->to('/admin/users')->with('error', 'User tidak ditemukan');
+    }
+
+    return view('admin/edit_user', ['user' => $user]);
+}
+
+public function updateUser($id)
+{
+    $userModel = new \App\Models\UserModel();
+    $user = $userModel->find($id);
+
+    if (!$user) {
+        return redirect()->to('/admin/users')->with('error', 'User tidak ditemukan');
+    }
+
+    $username = $this->request->getPost('username');
+    $password = $this->request->getPost('password');
+    $role = $this->request->getPost('role');
+
+    $data = [
+        'username' => $username,
+        'role' => $role,
+    ];
+
+    if (!empty($password)) {
+        $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+    }
+
+    $userModel->update($id, $data);
+
+    return redirect()->to('/admin/users')->with('success', 'User berhasil diperbarui');
+}
+
+ public function delete($id)
+    {
+        $model = new UserModel();
+        $user = $model->find($id);
+        if (!$user) {
+            return redirect()->back()->with('errors', ['User tidak ditemukan.']);
+        }
+
+        $model->delete($id);
+
+        return redirect()->to('/admin/users')->with('success', 'User berhasil dihapus.');
+    }
+    
+public function listAdmin()
+{
+    $userModel = new \App\Models\UserModel();
+    $admins = $userModel->where('role', 'admin')->findAll();
+
+    return view('admin/users/admin_list', ['users' => $admins]);
+}
+
+public function listUser()
+{
+    $userModel = new \App\Models\UserModel();
+    $users = $userModel->where('role', 'user')->findAll();
+
+    return view('admin/users/user_list', ['users' => $users]);
+}
+
+public function create()
+{
+    return view('admin/tambah_user');
+}
+
+public function store()
+{
+    $userModel = new \App\Models\UserModel();
+
+    $data = [
+        'username' => $this->request->getPost('username'),
+        'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+        'role'     => $this->request->getPost('role'),
+    ];
+
+    $userModel->insert($data);
+
+    // Redirect ke route yang ada
+    return redirect()->to(base_url('admin/users'))->with('success', 'User berhasil ditambahkan.');
 }
 
 

@@ -29,7 +29,7 @@
         .header h2 {
             margin: 0;
             font-size: 24px;
-            color: #139043ff;
+            color: #007bff;
         }
 
         .section {
@@ -68,7 +68,7 @@
 
         .print-btn {
             padding: 10px 20px;
-            background-color: #139043ff;
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 6px;
